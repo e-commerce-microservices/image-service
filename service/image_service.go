@@ -32,8 +32,8 @@ func (srv ImageService) Ping(context.Context, *empty.Empty) (*pb.Pong, error) {
 
 const maxImageSize = 1 << 20 // 1MB
 
-// CreateImage client streaming
-func (srv ImageService) CreateImage(stream pb.ImageService_CreateImageServer) error {
+// UploadImage client streaming
+func (srv ImageService) UploadImage(stream pb.ImageService_UploadImageServer) error {
 
 	req, err := stream.Recv()
 	if err != nil {

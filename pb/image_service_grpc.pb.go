@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ImageServiceClient interface {
 	Ping(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Pong, error)
-	CreateImage(ctx context.Context, opts ...grpc.CallOption) (ImageService_CreateImageClient, error)
+	UploadImage(ctx context.Context, opts ...grpc.CallOption) (ImageService_UploadImageClient, error)
 }
 
 type imageServiceClient struct {
@@ -44,30 +44,30 @@ func (c *imageServiceClient) Ping(ctx context.Context, in *empty.Empty, opts ...
 	return out, nil
 }
 
-func (c *imageServiceClient) CreateImage(ctx context.Context, opts ...grpc.CallOption) (ImageService_CreateImageClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ImageService_ServiceDesc.Streams[0], "/ecommerce.ImageService/CreateImage", opts...)
+func (c *imageServiceClient) UploadImage(ctx context.Context, opts ...grpc.CallOption) (ImageService_UploadImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ImageService_ServiceDesc.Streams[0], "/ecommerce.ImageService/UploadImage", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &imageServiceCreateImageClient{stream}
+	x := &imageServiceUploadImageClient{stream}
 	return x, nil
 }
 
-type ImageService_CreateImageClient interface {
+type ImageService_UploadImageClient interface {
 	Send(*UploadImageRequest) error
 	CloseAndRecv() (*UploadImageResponse, error)
 	grpc.ClientStream
 }
 
-type imageServiceCreateImageClient struct {
+type imageServiceUploadImageClient struct {
 	grpc.ClientStream
 }
 
-func (x *imageServiceCreateImageClient) Send(m *UploadImageRequest) error {
+func (x *imageServiceUploadImageClient) Send(m *UploadImageRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *imageServiceCreateImageClient) CloseAndRecv() (*UploadImageResponse, error) {
+func (x *imageServiceUploadImageClient) CloseAndRecv() (*UploadImageResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (x *imageServiceCreateImageClient) CloseAndRecv() (*UploadImageResponse, er
 // for forward compatibility
 type ImageServiceServer interface {
 	Ping(context.Context, *empty.Empty) (*Pong, error)
-	CreateImage(ImageService_CreateImageServer) error
+	UploadImage(ImageService_UploadImageServer) error
 	mustEmbedUnimplementedImageServiceServer()
 }
 
@@ -94,8 +94,8 @@ type UnimplementedImageServiceServer struct {
 func (UnimplementedImageServiceServer) Ping(context.Context, *empty.Empty) (*Pong, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedImageServiceServer) CreateImage(ImageService_CreateImageServer) error {
-	return status.Errorf(codes.Unimplemented, "method CreateImage not implemented")
+func (UnimplementedImageServiceServer) UploadImage(ImageService_UploadImageServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadImage not implemented")
 }
 func (UnimplementedImageServiceServer) mustEmbedUnimplementedImageServiceServer() {}
 
@@ -128,25 +128,25 @@ func _ImageService_Ping_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_CreateImage_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ImageServiceServer).CreateImage(&imageServiceCreateImageServer{stream})
+func _ImageService_UploadImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ImageServiceServer).UploadImage(&imageServiceUploadImageServer{stream})
 }
 
-type ImageService_CreateImageServer interface {
+type ImageService_UploadImageServer interface {
 	SendAndClose(*UploadImageResponse) error
 	Recv() (*UploadImageRequest, error)
 	grpc.ServerStream
 }
 
-type imageServiceCreateImageServer struct {
+type imageServiceUploadImageServer struct {
 	grpc.ServerStream
 }
 
-func (x *imageServiceCreateImageServer) SendAndClose(m *UploadImageResponse) error {
+func (x *imageServiceUploadImageServer) SendAndClose(m *UploadImageResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *imageServiceCreateImageServer) Recv() (*UploadImageRequest, error) {
+func (x *imageServiceUploadImageServer) Recv() (*UploadImageRequest, error) {
 	m := new(UploadImageRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -168,8 +168,8 @@ var ImageService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "CreateImage",
-			Handler:       _ImageService_CreateImage_Handler,
+			StreamName:    "UploadImage",
+			Handler:       _ImageService_UploadImage_Handler,
 			ClientStreams: true,
 		},
 	},
