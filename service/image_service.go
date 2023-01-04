@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"io"
 	"log"
 
 	"github.com/e-commerce-microservices/image-service/pb"
@@ -13,12 +14,15 @@ import (
 
 // ImageService ...
 type ImageService struct {
+	imageStore ImageStore
 	pb.UnimplementedImageServiceServer
 }
 
 // NewImageService create ImageService instance
 func NewImageService() ImageService {
-	return ImageService{}
+	return ImageService{
+		imageStore: NewDiskImageStore("images"),
+	}
 }
 
 // Ping pong
@@ -43,6 +47,16 @@ func (srv ImageService) CreateImage(stream pb.ImageService_CreateImageServer) er
 	imageData := bytes.Buffer{}
 	imageSize := 0
 	for {
+		log.Print("waiting to receive more data")
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Print("no more data")
+			break
+		}
+		if err != nil {
+			return status.Errorf(codes.Unknown, "cannot receive chunk data: %v ", err)
+		}
+
 		chunk := req.GetChunkData()
 		size := len(chunk)
 
@@ -53,15 +67,20 @@ func (srv ImageService) CreateImage(stream pb.ImageService_CreateImageServer) er
 			return status.Errorf(codes.InvalidArgument, "image is too large: %d > %d", imageSize, maxImageSize)
 		}
 
-		_, err := imageData.Write(chunk)
+		_, err = imageData.Write(chunk)
 		if err != nil {
 			return status.Errorf(codes.Internal, "cannot write chunk data: %v", err)
 		}
 	}
 
+	imageID, err := srv.imageStore.Save(id, imageType, imageData)
+	if err != nil {
+		return status.Errorf(codes.Internal, "cannot save image to the store: %v", err)
+	}
+
 	res := &pb.UploadImageResponse{
-		Id:   id,
-		Size: maxImageSize,
+		Id:   imageID,
+		Size: uint32(imageSize),
 	}
 
 	err = stream.SendAndClose(res)
@@ -70,5 +89,6 @@ func (srv ImageService) CreateImage(stream pb.ImageService_CreateImageServer) er
 	}
 
 	log.Printf("saved image with id: %s, size: %d", id, imageSize)
+
 	return nil
 }
