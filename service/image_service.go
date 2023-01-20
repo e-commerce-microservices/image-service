@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log"
 
 	"github.com/e-commerce-microservices/image-service/pb"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -14,7 +13,7 @@ import (
 
 // ImageService ...
 type ImageService struct {
-	imageStore ImageStore
+	imageStore *DiskImageStore
 	pb.UnimplementedImageServiceServer
 }
 
@@ -27,7 +26,9 @@ func NewImageService() ImageService {
 
 // Ping pong
 func (srv ImageService) Ping(context.Context, *empty.Empty) (*pb.Pong, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+	return &pb.Pong{
+		Message: "pong",
+	}, nil
 }
 
 const maxImageSize = 1 << 20 // 1MB
@@ -40,17 +41,13 @@ func (srv ImageService) UploadImage(stream pb.ImageService_UploadImageServer) er
 		return status.Error(codes.Unknown, err.Error())
 	}
 
-	id := req.GetInfo().GetId()
 	imageType := req.GetInfo().GetImageType()
-	log.Printf("receive an upload-image request for laptop %s with image type %s", id, imageType)
 
 	imageData := bytes.Buffer{}
 	imageSize := 0
 	for {
-		log.Print("waiting to receive more data")
 		req, err := stream.Recv()
 		if err == io.EOF {
-			log.Print("no more data")
 			break
 		}
 		if err != nil {
@@ -59,8 +56,6 @@ func (srv ImageService) UploadImage(stream pb.ImageService_UploadImageServer) er
 
 		chunk := req.GetChunkData()
 		size := len(chunk)
-
-		log.Printf("received a chunk with size: %d", size)
 
 		imageSize += size
 		if imageSize > maxImageSize {
@@ -73,22 +68,19 @@ func (srv ImageService) UploadImage(stream pb.ImageService_UploadImageServer) er
 		}
 	}
 
-	imageID, err := srv.imageStore.Save(id, imageType, imageData)
+	imageURL, err := srv.imageStore.Save(imageType, imageData)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot save image to the store: %v", err)
 	}
 
 	res := &pb.UploadImageResponse{
-		Id:   imageID,
-		Size: uint32(imageSize),
+		ImageUrl: imageURL,
 	}
 
 	err = stream.SendAndClose(res)
 	if err != nil {
 		return status.Errorf(codes.Unknown, "cannot send response: %v", err)
 	}
-
-	log.Printf("saved image with id: %s, size: %d", id, imageSize)
 
 	return nil
 }

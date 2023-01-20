@@ -9,36 +9,22 @@ import (
 	"github.com/google/uuid"
 )
 
-type ImageStore interface {
-	Save(laptopID string, imageType string, imageData bytes.Buffer) (string, error)
-}
-
+// DiskImageStore ...
 type DiskImageStore struct {
 	mutex       sync.RWMutex
 	imageFolder string
-	images      map[string]*ImageInfo
 }
 
-type ImageInfo struct {
-	LaptopID string
-	Type     string
-	Path     string
-}
-
+// NewDiskImageStore creates a new DiskImageStore
 func NewDiskImageStore(imageFolder string) *DiskImageStore {
 	return &DiskImageStore{
 		imageFolder: imageFolder,
-		images:      map[string]*ImageInfo{},
 	}
 }
 
-func (store *DiskImageStore) Save(laptopID string, imageType string, imageData bytes.Buffer) (string, error) {
-	imageID, err := uuid.NewRandom()
-	if err != nil {
-		return "", fmt.Errorf("cannot generate image id: %w", err)
-	}
-
-	imagePath := fmt.Sprintf("%s/%s.%s", store.imageFolder, imageID, imageType)
+// Save ...
+func (store *DiskImageStore) Save(imageType string, imageData bytes.Buffer) (string, error) {
+	imagePath := fmt.Sprintf("%s/%s/%s", os.Getenv("HOST_ADDR"), store.imageFolder, getImageURL(imageType))
 
 	file, err := os.Create(imagePath)
 	if err != nil {
@@ -50,14 +36,12 @@ func (store *DiskImageStore) Save(laptopID string, imageType string, imageData b
 		return "", fmt.Errorf("cannot write image to file: %w", err)
 	}
 
-	store.mutex.Lock()
-	defer store.mutex.Unlock()
+	return imagePath, nil
+}
 
-	store.images[imageID.String()] = &ImageInfo{
-		LaptopID: laptopID,
-		Type:     imageType,
-		Path:     imagePath,
+func getImageURL(imageType string) string {
+	if len(imageType) == 0 {
+		imageType = "jpg"
 	}
-
-	return imageID.String(), nil
+	return fmt.Sprintf("%s.%s", uuid.New(), imageType)
 }
