@@ -13,15 +13,12 @@ import (
 
 // ImageService ...
 type ImageService struct {
-	imageStore *DiskImageStore
 	pb.UnimplementedImageServiceServer
 }
 
 // NewImageService create ImageService instance
 func NewImageService() ImageService {
-	return ImageService{
-		imageStore: NewDiskImageStore("images"),
-	}
+	return ImageService{}
 }
 
 // Ping pong
@@ -68,7 +65,7 @@ func (srv ImageService) UploadImage(stream pb.ImageService_UploadImageServer) er
 		}
 	}
 
-	imageURL, err := srv.imageStore.Save(imageType, imageData)
+	imageURL, err := saveImage(imageType, imageData)
 	if err != nil {
 		return status.Errorf(codes.Internal, "cannot save image to the store: %v", err)
 	}

@@ -32,7 +32,7 @@ func main() {
 }
 
 func serveFileServer() {
-	fs := http.FileServer(http.Dir("./images"))
+	fs := http.FileServer(http.Dir("/app/images"))
 	http.Handle("/", fs)
 
 	err := http.ListenAndServe(":3000", nil)

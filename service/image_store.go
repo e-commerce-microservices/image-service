@@ -4,27 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/google/uuid"
 )
 
-// DiskImageStore ...
-type DiskImageStore struct {
-	mutex       sync.RWMutex
-	imageFolder string
-}
-
-// NewDiskImageStore creates a new DiskImageStore
-func NewDiskImageStore(imageFolder string) *DiskImageStore {
-	return &DiskImageStore{
-		imageFolder: imageFolder,
-	}
-}
-
-// Save ...
-func (store *DiskImageStore) Save(imageType string, imageData bytes.Buffer) (string, error) {
-	imagePath := fmt.Sprintf("%s/%s/%s", os.Getenv("HOST_ADDR"), store.imageFolder, getImageURL(imageType))
+func saveImage(imageType string, imageData bytes.Buffer) (string, error) {
+	imagePath := fmt.Sprintf("%s/%s", "/app/images", getImageURL(imageType))
 
 	file, err := os.Create(imagePath)
 	if err != nil {
