@@ -9,7 +9,8 @@ import (
 )
 
 func saveImage(imageType string, imageData bytes.Buffer) (string, error) {
-	imagePath := fmt.Sprintf("%s/%s", "/app/images", getImageURL(imageType))
+	imageURL := getImageURL(imageType)
+	imagePath := fmt.Sprintf("%s/%s", "/app/images", imageURL)
 
 	file, err := os.Create(imagePath)
 	if err != nil {
@@ -21,7 +22,7 @@ func saveImage(imageType string, imageData bytes.Buffer) (string, error) {
 		return "", fmt.Errorf("cannot write image to file: %w", err)
 	}
 
-	return imagePath, nil
+	return imageURL, nil
 }
 
 func getImageURL(imageType string) string {

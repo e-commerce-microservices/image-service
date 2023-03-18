@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/e-commerce-microservices/image-service/pb"
@@ -71,7 +72,7 @@ func (srv ImageService) UploadImage(stream pb.ImageService_UploadImageServer) er
 	}
 
 	res := &pb.UploadImageResponse{
-		ImageUrl: imageURL,
+		ImageUrl: fmt.Sprintf("http://192.168.49.2:30016/%s", imageURL),
 	}
 
 	err = stream.SendAndClose(res)
